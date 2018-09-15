@@ -65,11 +65,13 @@ app.post('/user', (req, res) => {
 	client.connect();	
 	//CONFLICT ON CONSTRAINT unique_name ON CONFLICT (name) DO NOTHING
 	client.query('INSERT INTO users(name, password) VALUES($1, $2) ON CONFLICT (name) DO NOTHING RETURNING *', insertUser, (err, result) => {
-		if (result.rows.length == 0)
+		if (result.rows.length == 0) {
 			return res.json({
 				success: false,
 				error: 'duplicate'
 			});
+			client.end();
+		};
 		//console.log(result.rows[0].name);
 		if (err) {
 			return res.json({
