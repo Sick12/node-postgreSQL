@@ -44,17 +44,33 @@ app.get('/', (req, res) => {
 	pool.query('SELECT * FROM users', (err, results) => {
 		//console.log(err, res, 'from USERS @@@@@@@@@@@@@@@');
 		//console.log(results.rows);
+		for (let i = 0; i < results.rows.length; i++)
+			console.log(results.rows[i].name);
+		//console.log(results.rows);
+		if (err)
+			return res.json({
+				success: false,
+				err
+			});
 		return res.json({
-			success: results.rows
+			success: true,
+			result: results.rows
 		});
 		pool.end();
 	})
 });
 
 app.post('/user', (req, res) => {
-	let insertUser = [req.body.id, req.body.name, req.body.password];
-	client.connect();
-	client.query('INSERT INTO users(id, name, password) VALUES($1, $2, $3)', insertUser, (err, result) => {
+	let insertUser = [req.body.name, req.body.password];
+	client.connect();	
+	//CONFLICT ON CONSTRAINT unique_name ON CONFLICT (name) DO NOTHING
+	client.query('INSERT INTO users(name, password) VALUES($1, $2) ON CONFLICT (name) DO NOTHING RETURNING *', insertUser, (err, result) => {
+		if (result.rows.length == 0)
+			return res.json({
+				success: false,
+				error: 'duplicate'
+			});
+		//console.log(result.rows[0].name);
 		if (err) {
 			return res.json({
 				success: false,
@@ -65,7 +81,8 @@ app.post('/user', (req, res) => {
 		//console.log(err, result);
 		//console.log(result.rows[0]);
 		return res.json({
-			success: result
+			success: true, 
+			result: result
 		});
 		client.end();
 	});
@@ -79,19 +96,19 @@ app.post('/table', (req, res) => {
 //     Address varchar(255),
 //     City varchar(255) 
 // );
-	client.connect();
-	client.query('CREATE TABLE maniu(id SERIAL PRIMARY KEY, petName VARCHAR(40) NOT NULL, complete BOOLEAN)', (err, result) => {
-		if (err)
-			return res.json({
-				success: false,
-				err
-			});
+client.connect();
+client.query('CREATE TABLE users(id SERIAL PRIMARY KEY, name CHARACTER VARYING(200) NOT NULL, password CHARACTER VARYING(40) NOT NULL)', (err, result) => {
+	if (err)
 		return res.json({
-			success: true,
-			result
+			success: false,
+			err
 		});
-		client.end();
+	return res.json({
+		success: true,
+		result
 	});
+	client.end();
+});
 });
 
 
