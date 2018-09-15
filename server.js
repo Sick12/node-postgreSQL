@@ -90,6 +90,31 @@ app.post('/user', (req, res) => {
 	});
 });
 
+app.put('/update-user/:id', (req, res) => {
+	let updateUser = [req.params.id];
+	console.log(req.params.id);
+	let insertUser = [req.body.name, req.body.password];
+	client.connect();
+	client.query('UPDATE users WHERE id =' + req.params.id + 'SET name=miguel, password=sombrero', (err, result) => {
+		if (err) {
+			return res.json({
+				success: false,
+				err
+			});
+			client.end();
+		}
+		return res.json({
+			success: true,
+			result
+		});
+		client.end();
+
+	});
+});
+app.delete('/delete-user', (req, res) => {
+
+});
+
 app.post('/table', (req, res) => {
 // 	CREATE TABLE Persons (
 //     PersonID int,
@@ -110,8 +135,7 @@ client.query('CREATE TABLE users(id SERIAL PRIMARY KEY, name CHARACTER VARYING(2
 		result
 	});
 	client.end();
-});
+	});
 });
 
-
-app.listen(port, () => {console.log('App started on port: ' + port)});
+app.listen(port, () => { console.log('App started on port: ' + port) });
