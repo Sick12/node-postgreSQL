@@ -44,8 +44,8 @@ app.get('/', (req, res) => {
 	pool.query('SELECT * FROM users', (err, results) => {
 		//console.log(err, res, 'from USERS @@@@@@@@@@@@@@@');
 		//console.log(results.rows);
-		for (let i = 0; i < results.rows.length; i++)
-			console.log(results.rows[i].name);
+		// for (let i = 0; i < results.rows.length; i++)
+		// 	console.log(results.rows[i].name);
 		//console.log(results.rows);
 		if (err)
 			return res.json({
@@ -91,28 +91,54 @@ app.post('/user', (req, res) => {
 });
 
 app.put('/update-user/:id', (req, res) => {
-	let updateUser = [req.params.id];
-	console.log(req.params.id);
-	let insertUser = [req.body.name, req.body.password];
+	let updateUser = [req.body.name, req.body.password, req.params.id];
 	client.connect();
-	client.query('UPDATE users WHERE id =' + req.params.id + 'SET name=miguel, password=sombrero', (err, result) => {
+	client.query('UPDATE users SET name = $1, password = $2 WHERE id = $3 RETURNING *', updateUser, (err, result) => {
 		if (err) {
 			return res.json({
 				success: false,
+				code: 'duplicate_username',
 				err
 			});
 			client.end();
 		}
 		return res.json({
 			success: true,
-			result
+			code: 200,
+			result: result.rows[0]
 		});
 		client.end();
 
 	});
 });
-app.delete('/delete-user', (req, res) => {
-
+app.delete('/delete-user/:id', (req, res) => {
+	setTimeout(() => { 
+		req.setTimeout(3500);
+		console.log('Delete timeout after 3.5s');
+	}, 3500);
+	let deleteUser = [req.params.id];
+	client.query('DELETE from users WHERE id = $1 RETURNING *', deleteUser, (err, result) => {
+		//console.log(result.rows[0].id);
+		if (result.rows.length == 0) {
+			return res.json({
+				success: false,
+				error: 'invalid_id'
+			});
+			client.end();
+		};
+		if (err) {
+			return res.json({
+				success: false,
+				err
+			});
+			client.end();
+		};
+		return res.json({
+			success: true,
+			result
+		});
+		client.end();
+	});
 });
 
 app.post('/table', (req, res) => {
@@ -135,7 +161,7 @@ client.query('CREATE TABLE users(id SERIAL PRIMARY KEY, name CHARACTER VARYING(2
 		result
 	});
 	client.end();
-	});
+});
 });
 
 app.listen(port, () => { console.log('App started on port: ' + port) });
